@@ -1,5 +1,5 @@
 export baseDir=~/dev/bates
-export projectDir=~/dev/bates/vedb_run
+export projectDir=~/dev/bates/vedb_extract_gaze
 export envName="vedb_analysis"
 export ancondaLoc="/opt/anaconda3/etc/profile.d/conda.sh"
 
@@ -69,7 +69,7 @@ git_repos['py-thin-plate-spline']='git@github.com:cheind/py-thin-plate-spline.gi
 for repo in "${!git_repos[@]}"
 do
 	echo "** Installing: $repo"
-    cd $projectDir
+    cd $baseDir
 	if [ -d $repo ]; then
 		:
 	else
@@ -77,5 +77,5 @@ do
 	fi
 	cd $repo
 	python setup.py install
-	cd $projectDir
+	cd $baseDir
 done

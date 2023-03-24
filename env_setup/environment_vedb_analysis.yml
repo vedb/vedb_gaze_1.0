@@ -9,7 +9,6 @@ dependencies:
   - pip
   - black
   - pipreqs
-  - tqdm
   - numpy=1.19
   - matplotlib
   - pandas
@@ -22,8 +21,10 @@ dependencies:
   - scikit-learn
   - pupil_recording_interface # from vedb channel
   - msgpack-python==0.6.2
+  - plotly
   - numcodecs
   - cython
+  - tqdm
   - pip:
     - pydra
     - pupil-detectors

@@ -35,6 +35,7 @@ import pupil_recording_interface
 # args = parser.parse_args()
 
 # Initialize some things
+# TODO: make these file arguments
 BASE_DIR = "/Users/mdavis/dev/bates"
 INPUT_DIR_NAME = "2022_09_15_15_25_58"
 INPUT_DIR = os.path.join(BASE_DIR, INPUT_DIR_NAME)

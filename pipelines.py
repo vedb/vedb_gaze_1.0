@@ -39,6 +39,7 @@ from vedb_gaze import calibration
 from vedb_gaze import file_io
 
 # Initialization
+# TODO: make these file arguments
 BASE_DIR = "/Users/mdavis/dev/bates"
 VEDB_RUN_DIR_NAME = os.path.dirname(__file__).split("/")[-1]
 INPUT_DIR_NAME = "2022_09_15_15_25_58"
@@ -538,6 +539,7 @@ if __name__ == "__main__":
 
     # Run the pipeline
     # Can use plugin="serial" to avoid the error, but theoretically that's slower
+    # TODO: switch this back on big machines
     # with pydra.Submitter(plugin="cf") as sub:
     with pydra.Submitter(plugin="serial") as sub:
         sub(wf)
