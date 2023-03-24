@@ -1,2 +1,2 @@
-# vedb-gaze
-Gaze analysis and visualization pipeline for Visual Experience Database
+# vedb_extract_gaze
+Slim version of VEDB Gaze, removing VEDB Store and other external dependencies

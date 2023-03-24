@@ -1,25 +1,22 @@
-try:
-    import pupil_detectors
-except:
-    print("No pupil detection available; pupil_detectors library not present")
+import pupil_detectors
 import numpy as np
-import file_io
 import time
-from .utils import dictlist_to_arraydict
+from . import utils
+from . import file_io
 
 
 def plabs_detect_pupil(
-    video_file, 
-    timestamp_file=None, 
-    start_frame=None, 
-    end_frame=None, 
+    video_file,
+    timestamp_file=None,
+    start_frame=None,
+    end_frame=None,
     batch_size=None,
     progress_bar=None,
-    id=None, 
-    properties=None, 
+    id=None,
+    properties=None,
     sleep_time=0.001,
     **kwargs
-    ):
+):
     """
     This is a simple wrapper to allow Pupil Labs `pupil_detectors` code
     to process a whole video of eye data.
@@ -71,14 +68,19 @@ def plabs_detect_pupil(
     """
     scale = 1.0  # hard-coded to always load full-size video
     if id is None:
-        if 'eye0' in video_file:
+        if "eye0" in video_file:
             id = 0
-        elif 'eye1' in video_file:
+        elif "eye1" in video_file:
             id = 1
         else:
-            raise ValueError("If video is not `eye0.mp4` or eye1.mp4`, per pupil labs conventions, then id kwarg must be specified!")
+            raise ValueError(
+                "If video is not `eye0.mp4` or eye1.mp4`, per pupil labs conventions, then id kwarg must be specified!"
+            )
     if progress_bar is None:
-        def progress_bar(x): return x
+
+        def progress_bar(x):
+            return x
+
     timestamps = np.load(timestamp_file)
     # Specify detection method later?
     if properties is None:
@@ -93,7 +95,7 @@ def plabs_detect_pupil(
         end_frame = n_frames_total
     if batch_size is None:
         # This variable might be better as an input
-        max_batch_bytes = 1024**3 * 4  # 4 GB
+        max_batch_bytes = 1024 ** 3 * 4  # 4 GB
         n_bytes = (vdim * scale) * (hdim * scale)
         batch_size = int(np.floor(max_batch_bytes / n_bytes))
 
@@ -101,18 +103,18 @@ def plabs_detect_pupil(
     n_batches = int(np.ceil(n_frames / batch_size))
     pupil_dicts = []
     for batch in range(n_batches):
-        print("Running batch %d/%d" % (batch+1, n_batches))
+        print("Running batch %d/%d" % (batch + 1, n_batches))
         batch_start = batch * batch_size + start_frame
         batch_end = np.minimum(batch_start + batch_size, end_frame)
-        print("Loading batch of %d frames..." % (batch_end-batch_start))
+        print("Loading batch of %d frames..." % (batch_end - batch_start))
         video_data = file_io.load_mp4(
-            video_file,
-            frames=(batch_start, batch_end),
-            size=scale,
-            color='gray')
+            video_file, frames=(batch_start, batch_end), size=scale, color="gray"
+        )
 
-        #for frame in progress_bar(range(n_frames)):
-        for batch_frame, frame in enumerate(progress_bar(range(batch_start, batch_end))):
+        # for frame in progress_bar(range(n_frames)):
+        for batch_frame, frame in enumerate(
+            progress_bar(range(batch_start, batch_end))
+        ):
             fr = video_data[batch_frame].copy()
             # Pupil needs c-ordered arrays, so switch from default load:
             fr = np.ascontiguousarray(fr)
@@ -130,5 +132,5 @@ def plabs_detect_pupil(
                 out["timestamp"] = timestamps[frame]
             out["id"] = id
             pupil_dicts.append(out)
-    out = dictlist_to_arraydict(pupil_dicts)
+    out = utils.dictlist_to_arraydict(pupil_dicts)
     return out

@@ -1,0 +1,30 @@
+name: vedb_analysis
+channels:
+  - anaconda
+  - conda-forge
+  - auto
+  - vedb
+dependencies:
+  - python==3.8
+  - pip
+  - black
+  - pipreqs
+  - tqdm
+  - numpy=1.19
+  - matplotlib
+  - pandas
+  - h5py
+  # - h5py==3.6
+  - imageio
+  - scipy
+  - pyyaml
+  - scikit-image
+  - scikit-learn
+  - pupil_recording_interface # from vedb channel
+  - msgpack-python==0.6.2
+  - numcodecs
+  - cython
+  - pip:
+    - pydra
+    - pupil-detectors
+    - cottoncandy

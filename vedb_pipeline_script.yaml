@@ -1,0 +1,95 @@
+pupil_detection_left:
+  fn_module: vedb_gaze
+  fn_file: pupil_detection_pl
+  fn_name: plabs_detect_pupil
+  fn_config: plab_default
+  fn_inputs:
+    progress_bar: True
+    n_cores: 8
+  DependsOn: []
+pupil_detection_right:
+  fn_module: vedb_gaze
+  fn_file: pupil_detection_pl
+  fn_name: plabs_detect_pupil
+  fn_config: plab_default
+  fn_inputs:
+    progress_bar: True
+    n_cores: 8
+  DependsOn: []
+calibration_marker_detection:
+  fn_module: vedb_gaze
+  fn_file: marker_detection
+  fn_name: find_concentric_circles
+  fn_config: circles_halfres
+  fn_inputs:
+    n_cores: 8
+    progress_bar: True
+  DependsOn: []
+calibration_marker_filtering:
+  fn_module: vedb_gaze
+  fn_file: marker_parsing
+  fn_name: find_epochs
+  fn_config: cluster_default
+  fn_inputs:
+  DependsOn: [find_calibration_markers]
+calibrate_left:
+  fn_module: vedb_gaze
+  fn_file: calibration
+  fn_name: Calibration
+  fn_config: monocular_pl_default
+  fn_inputs:
+  DependsOn: [pupil_detection_left, filter_calibration_markers]
+calibrate_right:
+  fn_module: vedb_gaze
+  fn_file: calibration
+  fn_name: Calibration
+  fn_config: monocular_pl_default
+  fn_inputs:
+  DependsOn: [pupil_detection_right, filter_calibration_markers]
+map_gaze_left:
+  fn_module: vedb_gaze
+  fn_file: gaze_mapping
+  fn_name: gaze_mapper
+  fn_config:
+  fn_inputs:
+    mapping_type: default_mapper
+  DependsOn: [pupil_detection_left, calibrate_left]
+map_gaze_right:
+  fn_module: vedb_gaze
+  fn_file: gaze_mapping
+  fn_name: gaze_mapper
+  fn_config:
+  fn_inputs:
+    mapping_type: default_mapper
+  DependsOn: [pupil_detection_right, calibrate_right]
+validation_marker_detection:
+  fn_module: vedb_gaze
+  fn_file: marker_detection
+  fn_name: find_checkerboard
+  fn_config: checkerboard_halfres
+  fn_inputs:
+    n_cores: 8
+    progress_bar: True
+  DependsOn: []
+validation_marker_filtering:
+  fn_module: vedb_gaze
+  fn_file: marker_parsing
+  fn_name: find_epochs
+  # fn_config: basic_split
+  fn_config: cluster_default
+  fn_inputs:
+  DependsOn: [find_validation_markers]
+compute_error_left:
+  fn_module: vedb_gaze
+  fn_file: error_computation
+  fn_name: compute_error
+  fn_config: smooth_tps_default
+  fn_inputs:
+  DependsOn: [validation_marker_filtering, map_gaze_left]
+compute_error_right:
+  fn_module: vedb_gaze
+  fn_file: error_computation
+  fn_name: compute_error
+  fn_config: smooth_tps_default
+  fn_inputs:
+  DependsOn: [validation_marker_filtering, map_gaze_right]

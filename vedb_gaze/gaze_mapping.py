@@ -1,5 +1,4 @@
-
-def gaze_mapper(calibration, pupil_data, mapping_type='default_mapper', **kwargs):
+def gaze_mapper(calibration, pupil_data, mapping_type="default_mapper", **kwargs):
     """Map gaze given a calibration object (or objects) and pupil data
 
     Currently (2022.03.01) this is a very thin wrapper on the .map() method of
@@ -22,7 +21,7 @@ def gaze_mapper(calibration, pupil_data, mapping_type='default_mapper', **kwargs
     _type_
         _description_
     """
-    if mapping_type == 'default_mapper':
-        gaze = calibration.map(pupil_data, return_type='arraydict')
+    if mapping_type == "default_mapper":
+        gaze = calibration.map(pupil_data, return_type="arraydict")
         return gaze
-    
+

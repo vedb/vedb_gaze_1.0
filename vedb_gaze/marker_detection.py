@@ -1,15 +1,11 @@
-from .utils import dictlist_to_arraydict
-from pupil_recording_interface.externals.circle_detector import find_pupil_circle_marker
 import numpy as np
-import file_io
 import cv2
-import  copy
-
 import multiprocessing
-from multiprocessing import Pool, set_start_method, get_context
-#set_start_method("spawn")
-
 from itertools import repeat
+from pupil_recording_interface.externals.circle_detector import find_pupil_circle_marker
+from . import utils
+from . import file_io
+
 
 def _opencv_ellipse_to_dict(ellipse_dict):
     data = {}
@@ -36,9 +32,7 @@ def _find_circles_frame(args):
         this_circle = {}
         ellipse_centers = np.array([e[0] for e in ellipses]) / scale
         this_circle["location"] = ellipse_centers.mean(0).tolist()
-        this_circle["norm_pos"] = this_circle["location"] / np.array(
-            [hdim, vdim]
-        )
+        this_circle["norm_pos"] = this_circle["location"] / np.array([hdim, vdim])
         this_circle["norm_pos"] = this_circle["norm_pos"].tolist()
         ellipse_radii = np.array([e[1] for e in ellipses])
         this_circle["size"] = ellipse_radii.max(0)
@@ -47,14 +41,16 @@ def _find_circles_frame(args):
     return output_dicts
 
 
-def find_concentric_circles(video_file,
-        timestamp_file,
-        scale=0.5,
-        n_cores=12,
-        start_frame=None,
-        end_frame=None,
-        batch_size=None,
-        progress_bar=None):
+def find_concentric_circles(
+    video_file,
+    timestamp_file,
+    scale=0.5,
+    n_cores=12,
+    start_frame=None,
+    end_frame=None,
+    batch_size=None,
+    progress_bar=None,
+):
     """Use PupilLabs circle detector to find concentric circles
     
     Assumes uint8 RGB image input
@@ -80,15 +76,17 @@ def find_concentric_circles(video_file,
     -------
     [type]
         [description]
-    """    """
+    """ """
     """
     if progress_bar is None:
-        def progress_bar(x, total=0): return x
+
+        def progress_bar(x, total=0):
+            return x
 
     timestamps = np.load(timestamp_file)
 
     # termination criteria: Make inputs?
-    #criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
+    # criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
     use_multiprocessing = n_cores is not None
     n_frames_total, vdim, hdim, _ = file_io.var_size(video_file)
     if start_frame is None:
@@ -97,7 +95,7 @@ def find_concentric_circles(video_file,
         end_frame = n_frames_total
     if batch_size is None:
         # This variable might be better as an input
-        max_batch_bytes = 1024**3 * 4  # 4 GB
+        max_batch_bytes = 1024 ** 3 * 4  # 4 GB
         n_bytes = (vdim * scale) * (hdim * scale)
         batch_size = int(np.floor(max_batch_bytes / n_bytes))
 
@@ -106,37 +104,40 @@ def find_concentric_circles(video_file,
     output_dicts = []
 
     for batch in range(n_batches):
-        print("Running batch %d/%d" % (batch+1, n_batches))
+        print("Running batch %d/%d" % (batch + 1, n_batches))
         batch_start = batch * batch_size + start_frame
         batch_end = np.minimum(batch_start + batch_size, end_frame)
-        print("Loading batch of %d frames..." % (batch_end-batch_start))
+        print("Loading batch of %d frames..." % (batch_end - batch_start))
         video_data = file_io.load_mp4(
-            video_file,
-            frames=(batch_start, batch_end),
-            size=scale,
-            color='gray')
+            video_file, frames=(batch_start, batch_end), size=scale, color="gray"
+        )
         n_frames = batch_end - batch_start
-        assert video_data.shape[0] == n_frames, 'Frame number error'
-        assert len(timestamps[batch_start:batch_end]
-                   ) == n_frames, 'Timestamp / frame number mismatch'
+        assert video_data.shape[0] == n_frames, "Frame number error"
+        assert (
+            len(timestamps[batch_start:batch_end]) == n_frames
+        ), "Timestamp / frame number mismatch"
         # Args must be concatenated like this for use with parallel processing & progress bar
         # Look up "istarmap" for a pool object for slightly less clunky syntax, but use of e.g.
         # () requires python 3.8+, which I'd rather not commit to yet
-        zz = zip(video_data,
-                 timestamps[batch_start:batch_end],
-                 repeat(scale),
-                 repeat((vdim, hdim)),
-                 )
+        zz = zip(
+            video_data,
+            timestamps[batch_start:batch_end],
+            repeat(scale),
+            repeat((vdim, hdim)),
+        )
         if use_multiprocessing:
             if n_cores > multiprocessing.cpu_count():
                 n_cores = multiprocessing.cpu_count()
             # Parallel call to framewise calculation of checkerboard position
-            with Pool(n_cores) as p:  # get_context('spawn').Pool(n_cores) as p: #
-                tmp_out = list(progress_bar(
-                    p.imap(_find_circles_frame, zz), total=n_frames))
+            with multiprocessing.Pool(
+                n_cores
+            ) as p:  # get_context('spawn').Pool(n_cores) as p: #
+                tmp_out = list(
+                    progress_bar(p.imap(_find_circles_frame, zz), total=n_frames)
+                )
             # Filter output to have no empty dicts in list
             for x in tmp_out:
-                if x: 
+                if x:
                     output_dicts.extend(x)
         else:
             # Run serially (easier to debug if anything goes wrong)
@@ -145,13 +146,14 @@ def find_concentric_circles(video_file,
                 if tmp:
                     output_dicts.extend(tmp)
     if len(output_dicts) == 0:
-        out = dict(location=np.array([]),
-                   norm_pos=np.array([]),
-                   timestamp=np.array([]),
-                   size=np.array([]),
-                   )
+        out = dict(
+            location=np.array([]),
+            norm_pos=np.array([]),
+            timestamp=np.array([]),
+            size=np.array([]),
+        )
     else:
-        out = dictlist_to_arraydict(output_dicts)
+        out = utils.dictlist_to_arraydict(output_dicts)
     return out
 
 
@@ -172,51 +174,69 @@ def _find_checkerboard_frame(args):
     use of multiprocessing module in conjunction with tqdm for progress bars. 
     """
     # Find the chess board corners
-    video_data, timestamp, scale, (vdim, hdim), computed_refinement_window_size, checkerboard_size, detection_flags = args
+    (
+        video_data,
+        timestamp,
+        scale,
+        (vdim, hdim),
+        computed_refinement_window_size,
+        checkerboard_size,
+        detection_flags,
+    ) = args
     found_checkerboard, corners1 = cv2.findChessboardCorners(
-        video_data, checkerboard_size, detection_flags)
+        video_data, checkerboard_size, detection_flags
+    )
     # If found, add object points, image points (after refining them)
     if found_checkerboard:
         # Fixed opencv parameters - revisit?
         n_iterations = 30
         threshold = 0.001
         sub_pixel_corner_criteria = (
-            cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, n_iterations, threshold)
+            cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER,
+            n_iterations,
+            threshold,
+        )
         zero_zone = (-1, -1)
         corners2 = cv2.cornerSubPix(
-            video_data, corners1, computed_refinement_window_size, zero_zone, sub_pixel_corner_criteria)
+            video_data,
+            corners1,
+            computed_refinement_window_size,
+            zero_zone,
+            sub_pixel_corner_criteria,
+        )
         # Parse outputs (convert back to full-size pixels, and convert
         # to 0-1 image coordinates for full checkerboard and centroid)
         corners = np.squeeze(corners2) / scale
         marker_position = np.mean(corners, axis=0)
         corners_normalized = corners / np.array([hdim, vdim])
-        marker_position_normalized = np.mean(
-            corners_normalized, axis=0)
+        marker_position_normalized = np.mean(corners_normalized, axis=0)
         # Keep outputs
         tmp = dict(
             timestamp=timestamp,
             location_full_checkerboard=corners,
             norm_pos_full_checkerboard=corners_normalized,
             location=marker_position,
-            norm_pos=marker_position_normalized,)
+            norm_pos=marker_position_normalized,
+        )
 
     else:
         tmp = {}
     return tmp
+
 
 def find_checkerboard(
     video_file,
     timestamp_file,
     checkerboard_size=(3, 6),
     scale=0.5,
-    refinement_window_size=(11,11),
+    refinement_window_size=(11, 11),
     n_cores=12,
     detection_flags=11,
     start_frame=None,
     end_frame=None,
     batch_size=None,
-    progress_bar=None
-    ):
+    progress_bar=None,
+):
     """Use opencv to detect a checkerboard pattern
 
     Parameters
@@ -251,7 +271,9 @@ def find_checkerboard(
         dictionary of arrays for locations of checkerboards
     """
     if progress_bar is None:
-        def progress_bar(x, total=0): return x
+
+        def progress_bar(x, total=0):
+            return x
 
     timestamps = np.load(timestamp_file)
     n_frames_total, vdim, hdim, _ = file_io.var_size(video_file)
@@ -261,44 +283,52 @@ def find_checkerboard(
         end_frame = n_frames_total
     if batch_size is None:
         # This variable might be better as an input
-        max_batch_bytes = 1024**3 * 4  # 4 GB
+        max_batch_bytes = 1024 ** 3 * 4  # 4 GB
         n_bytes = (vdim * scale) * (hdim * scale)
         batch_size = int(np.floor(max_batch_bytes / n_bytes))
     # More computed args & useful variables
     use_multiprocessing = n_cores is not None
-    computed_refinement_window_size = tuple([int(np.ceil(x * scale)) for x in refinement_window_size])
+    computed_refinement_window_size = tuple(
+        [int(np.ceil(x * scale)) for x in refinement_window_size]
+    )
     n_frames = end_frame - start_frame
     n_batches = int(np.ceil(n_frames / batch_size))
     output_dicts = []
     for batch in range(n_batches):
-        print("Running batch %d/%d" % (batch+1, n_batches))
+        print("Running batch %d/%d" % (batch + 1, n_batches))
         batch_start = batch * batch_size + start_frame
         batch_end = np.minimum(batch_start + batch_size, end_frame)
-        print('Loading...')
+        print("Loading...")
         video_data = file_io.load_mp4(
-            video_file,
-            frames=(batch_start, batch_end),
-            size=scale,
-            color='gray')
+            video_file, frames=(batch_start, batch_end), size=scale, color="gray"
+        )
         n_frames = batch_end - batch_start
-        assert video_data.shape[0] == n_frames, 'Frame number error'
-        assert len(timestamps[batch_start:batch_end]) == n_frames, 'Timestamp / frame number mismatch'
+        assert video_data.shape[0] == n_frames, "Frame number error"
+        assert (
+            len(timestamps[batch_start:batch_end]) == n_frames
+        ), "Timestamp / frame number mismatch"
         # Args must be concatenated like this for use with parallel processing & progress bar
         # Look up "istarmap" for a pool object for slightly less clunky syntax, but use of e.g.
         # () requires python 3.8+, which I'd rather not commit to yet
-        zz = zip(video_data,
-                 timestamps[batch_start:batch_end],
-                 repeat(scale),
-                 repeat((vdim, hdim)),
-                 repeat(computed_refinement_window_size),
-                 repeat(checkerboard_size),
-                 repeat(detection_flags))
+        zz = zip(
+            video_data,
+            timestamps[batch_start:batch_end],
+            repeat(scale),
+            repeat((vdim, hdim)),
+            repeat(computed_refinement_window_size),
+            repeat(checkerboard_size),
+            repeat(detection_flags),
+        )
         if use_multiprocessing:
             if n_cores > multiprocessing.cpu_count():
                 n_cores = multiprocessing.cpu_count()
             # Parallel call to framewise calculation of checkerboard position
-            with Pool(n_cores) as p: # get_context('spawn').Pool(n_cores) as p: # 
-                tmp_out = list(progress_bar(p.imap(_find_checkerboard_frame, zz), total=n_frames))
+            with multiprocessing.Pool(
+                n_cores
+            ) as p:  # get_context('spawn').Pool(n_cores) as p: #
+                tmp_out = list(
+                    progress_bar(p.imap(_find_checkerboard_frame, zz), total=n_frames)
+                )
             # Filter output to have no empty dicts in list
             tmp_out = [x for x in tmp_out if x]
             output_dicts.extend(tmp_out)
@@ -309,14 +339,14 @@ def find_checkerboard(
                 if tmp:
                     output_dicts.append(tmp)
     # Handle empty output
-    if len(output_dicts)==0:
+    if len(output_dicts) == 0:
         out = dict(
             timestamp=np.array([]),
             location_full_checkerboard=np.array([]),
             norm_pos_full_checkerboard=np.array([]),
             location=np.array([]),
             norm_pos=np.array([]),
-            )
+        )
     else:
-        out = dictlist_to_arraydict(output_dicts)
+        out = utils.dictlist_to_arraydict(output_dicts)
     return out
