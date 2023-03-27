@@ -8,6 +8,7 @@ Post-Processing of the eye camera images and T265 kinematic head
 
 data
 @author: 2023-03-18 - Michael Davis
+@author: 2023-03-27 - Michelle Greene going back to argparse
 """
 
 ###################
@@ -15,7 +16,7 @@ data
 ###################
 
 # Public
-# import argparse
+import argparse
 from datetime import datetime
 import os
 import yaml
@@ -31,22 +32,25 @@ import pupil_recording_interface
 ##########################
 
 # Read folder from command-line input
-# parser = argparse.ArgumentParser()
-# args = parser.parse_args()
+parser = argparse.ArgumentParser()
+parser.add_argument("-f", "--folder", help = "input the folder location where all your files are located.")
+args = parser.parse_args()
 
-# Initialize some things
-# TODO: make these file arguments
-BASE_DIR = "/Users/mdavis/dev/bates"
-INPUT_DIR_NAME = "2022_09_15_15_25_58"
-INPUT_DIR = os.path.join(BASE_DIR, INPUT_DIR_NAME)
+# error if no folder
+if not args.folder:
+    raise ValueError('Please indicate session folder YYYY-MM-DD-HH-MM-SS')
+else:
+    input_folder = args.folder
+
 
 # Inputs
-marker_times_yaml = os.path.join(INPUT_DIR, "marker_times.yaml")
-odo_times_yaml = os.path.join(INPUT_DIR, "odo_times.yaml")
-world_timestamps = np.load(os.path.join(INPUT_DIR, "world_timestamps.npy"))
+marker_times_yaml = os.path.join(input_folder, "marker_times.yaml")
+odo_times_yaml = os.path.join(input_folder), "odo_times.yaml")
+world_timestamps = np.load(os.path.join(input_folder, "world_timestamps.npy"))
 odometry_data = pupil_recording_interface.load_dataset(
     INPUT_DIR, odometry="recording", cache=False
 )
+
 #################################
 ##### SPECIFY MARKER EPOCHS #####
 #################################
