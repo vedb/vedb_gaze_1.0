@@ -48,8 +48,7 @@ marker_times_yaml = os.path.join(input_folder, "marker_times.yaml")
 odo_times_yaml = os.path.join(input_folder, "odo_times.yaml")
 world_timestamps = np.load(os.path.join(input_folder, "world_timestamps.npy"))
 odometry_data = pupil_recording_interface.load_dataset(
-    input_folder, odometry="recording", cache=False
-)
+    input_folder, odometry="recording", cache=False)
 
 #################################
 ##### SPECIFY MARKER EPOCHS #####
@@ -197,7 +196,7 @@ def start_end_plot(odometry, marker_times, yaml_file):
 
 if __name__ == "__main__":
     # Check folders for existance
-    print(f"** Input folder selected: {INPUT_DIR}")
+    print(f"** Input folder selected: {input_folder}")
     if not os.path.isdir(INPUT_DIR):
         raise ValueError("Input Folder does not exist. Check the path")
 
