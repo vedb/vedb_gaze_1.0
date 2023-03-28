@@ -197,7 +197,7 @@ def start_end_plot(odometry, marker_times, yaml_file):
 if __name__ == "__main__":
     # Check folders for existance
     print(f"** Input folder selected: {input_folder}")
-    if not os.path.isdir(INPUT_DIR):
+    if not os.path.isdir(input_folder):
         raise ValueError("Input Folder does not exist. Check the path")
 
     # Check if markers exist and fill in with world timestamps if not
