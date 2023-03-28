@@ -45,7 +45,7 @@ else:
 
 # Inputs
 marker_times_yaml = os.path.join(input_folder, "marker_times.yaml")
-odo_times_yaml = os.path.join(input_folder), "odo_times.yaml")
+odo_times_yaml = os.path.join(input_folder, "odo_times.yaml")
 world_timestamps = np.load(os.path.join(input_folder, "world_timestamps.npy"))
 odometry_data = pupil_recording_interface.load_dataset(
     INPUT_DIR, odometry="recording", cache=False
