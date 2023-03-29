@@ -95,7 +95,7 @@ def read_update_YAML_config(
         # Start with the config options
         if param_dict["fn_config"] is not None:
             step_config_fname = (
-                f'{param_dict["fn_name"]}-{param_dict["fn_config"]}.YAML'
+                f'{param_dict["fn_name"]}-{param_dict["fn_config"]}.yaml'
             )
             step_config_yaml = os.path.join(PARAM_DIR, step_config_fname)
             with open(step_config_yaml, "r", encoding="utf-8") as fid:
