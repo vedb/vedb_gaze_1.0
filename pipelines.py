@@ -39,11 +39,8 @@ from vedb_gaze import calibration
 from vedb_gaze import file_io
 
 # Initialization
-# TODO: make these file arguments
-BASE_DIR = "/Users/mdavis/dev/bates"
-VEDB_RUN_DIR_NAME = os.path.dirname(__file__).split("/")[-1]
-INPUT_DIR_NAME = "2022_09_15_15_25_58"
-PYDRA_OUTPUT_DIR = os.path.join(BASE_DIR, "tmp_pydra_output")
+BASE_DIR = "/media/space/Database/"
+PYDRA_OUTPUT_DIR = os.path.join(BASE_DIR, "db/processed/gaze/")
 pipeline_name = "vedb_pipeline"
 
 ##########################
@@ -52,13 +49,21 @@ pipeline_name = "vedb_pipeline"
 
 # Read folder from command-line input
 parser = argparse.ArgumentParser()
+parser.add_argument("-f", "--folder", help = "input the folder location where all your files are located.")
 parser.add_argument(
     "-w",
     "--wholeSession",
     default=False,
-    help="Do you want to perform the QC analysis on the whole session: input should be True or False",
+    help="Do you want to perform the analysis on the whole session: input should be True or False",
 )
 args = parser.parse_args()
+
+# error if no folder
+if not args.folder:
+    raise ValueError('Please indicate session folder YYYY-MM-DD-HH-MM-SS')
+else:
+    INPUT_DIR = args.folder
+    INPUT_DIR_NAME = INPUT_DIR.split('/')[-1]
 
 # Run full session
 run_full_session = False
@@ -365,8 +370,7 @@ def compute_error(marker_fpath, gaze_fpath):
 
 
 # Initialize some things
-INPUT_DIR = os.path.join(BASE_DIR, INPUT_DIR_NAME)
-PARAM_DIR = os.path.join(BASE_DIR, VEDB_RUN_DIR_NAME, "configs")
+PARAM_DIR = os.path.join(INPUT_DIR, "configs")
 PYDRA_OUTPUT_SESSION_DIR = os.path.join(PYDRA_OUTPUT_DIR, INPUT_DIR_NAME)
 
 # Input fpaths for pipline metadata
