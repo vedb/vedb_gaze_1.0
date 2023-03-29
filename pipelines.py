@@ -371,7 +371,7 @@ def compute_error(marker_fpath, gaze_fpath):
 
 
 # Initialize some things
-PARAM_DIR = os.path.join(INPUT_DIR, "configs")
+PARAM_DIR = os.path.join(CODE_DIR, "configs")
 PYDRA_OUTPUT_SESSION_DIR = os.path.join(PYDRA_OUTPUT_DIR, INPUT_DIR_NAME)
 
 # Input fpaths for pipline metadata
