@@ -40,6 +40,7 @@ from vedb_gaze import file_io
 
 # Initialization
 BASE_DIR = "/media/space/Database/"
+CODE_DIR = '.'
 PYDRA_OUTPUT_DIR = os.path.join(BASE_DIR, "db/processed/gaze/")
 pipeline_name = "vedb_pipeline"
 
@@ -375,7 +376,7 @@ PYDRA_OUTPUT_SESSION_DIR = os.path.join(PYDRA_OUTPUT_DIR, INPUT_DIR_NAME)
 
 # Input fpaths for pipline metadata
 pipeline_config_yaml = os.path.join(
-    BASE_DIR, VEDB_RUN_DIR_NAME, f"{pipeline_name}_script.yaml"
+    CODE_DIR, f"{pipeline_name}_script.yaml"
 )
 session_config_yaml = os.path.join(PYDRA_OUTPUT_SESSION_DIR, "session_config.yaml")
 
