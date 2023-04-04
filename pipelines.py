@@ -54,7 +54,7 @@ parser.add_argument("-f", "--folder", help = "input the folder location where al
 parser.add_argument(
     "-w",
     "--wholeSession",
-    default=False,
+    default=True,
     help="Do you want to perform the analysis on the whole session: input should be True or False",
 )
 args = parser.parse_args()
