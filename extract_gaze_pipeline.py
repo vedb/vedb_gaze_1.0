@@ -33,7 +33,7 @@ import os
 import yaml
 import argparse
 import vedb_gaze
-from . import utils
+import utils
 
 
 # Parse the arguments
@@ -67,7 +67,7 @@ except:
     
 # Load necessary files
 world_time = np.load(world_time_file)
-world_vid_sample = vedb_gaze.file_io.load_mp4(world_vid_file, frames=(400, 410)) #chosen arbitrarily to get dims
+world_vid_sample = utils.load_mp4(world_vid_file, frames=(400, 410)) #chosen arbitrarily to get dims
 world_vid_size = world_vid_sample.shape[1:3] 
 eye_left_time = np.load(eye_left_time_file)
 eye_right_time = np.load(eye_right_time_file)
@@ -102,131 +102,159 @@ validation_start_frame_pupil_right, validation_end_frame_pupil_right = \
 #################
 # Step 1: find calibration markers
 #################
-print("\n=== Finding calibration markers ===\n")
 
-calibration_markers = vedb_gaze.marker_detection.find_concentric_circles(world_vid_file, world_time_file, 
-                                                            start_frame=calibration_start_frame, 
-                                                            end_frame=calibration_end_frame, 
-                                                            scale=0.5, 
-                                                            progress_bar=tqdm.tqdm)
-# note: might want to change scale to 1 to run on full-size videos. 
-# save the calibration markers
-np.savez(os.path.join(output_dir, 'calibration_markers.npz'), **calibration_markers)
+if not os.path.exists(os.path.join(output_dir, 'calibration_markers.npz')):
+
+
+    print("\n=== Finding calibration markers ===\n")
+    
+    calibration_markers = vedb_gaze.marker_detection.find_concentric_circles(world_vid_file, world_time_file, 
+                                                                start_frame=calibration_start_frame, 
+                                                                end_frame=calibration_end_frame, 
+                                                                scale=0.5, 
+                                                                progress_bar=tqdm.tqdm)
+    # note: might want to change scale to 1 to run on full-size videos. 
+    # save the calibration markers
+    np.savez(os.path.join(output_dir, 'calibration_markers.npz'), **calibration_markers)
 
 ################
 # Step 2: detect pupils during calibration
 ################
 
-print("\n=== Finding pupil locations ===\n")
-
-pupil_left_calibration = vedb_gaze.pupil_detection_pl.plabs_detect_pupil(eye_left_file, eye_left_time_file, 
-                                                             start_frame=calibration_start_frame_pupil_left,
-                                                             end_frame=calibration_end_frame_pupil_left,
-                                                             progress_bar=tqdm.tqdm,)
-
-pupil_right_calibration = vedb_gaze.pupil_detection_pl.plabs_detect_pupil(eye_right_file, eye_right_time_file, 
-                                                             start_frame=calibration_start_frame_pupil_right,
-                                                             end_frame=calibration_end_frame_pupil_right,
-                                                             progress_bar=tqdm.tqdm,)
-
-pupil_left_validation = vedb_gaze.pupil_detection_pl.plabs_detect_pupil(eye_left_file, eye_left_time_file, 
-                                                             start_frame=validation_start_frame_pupil_left,
-                                                             end_frame=validation_end_frame_pupil_left,
-                                                             progress_bar=tqdm.tqdm,)
-
-pupil_right_validation = vedb_gaze.pupil_detection_pl.plabs_detect_pupil(eye_right_file, eye_right_time_file, 
-                                                             start_frame=validation_start_frame_pupil_right,
-                                                             end_frame=validation_end_frame_pupil_right,
-                                                             progress_bar=tqdm.tqdm,)
-
-# Save the pupil calibration files
-np.savez(os.path.join(output_dir, 'pupil_left_calibration.npz'), **pupil_left_calibration)
-np.savez(os.path.join(output_dir, 'pupil_right_calibration.npz'), **pupil_right_calibration)
-np.savez(os.path.join(output_dir, 'pupil_left_validation.npz'), **pupil_left_validation)
-np.savez(os.path.join(output_dir, 'pupil_right_validation.npz'), **pupil_right_validation)
-
-# get all pupils if running on full session
-if args.wholeSession:
-    pupil_left_all = vedb_gaze.pupil_detection_pl.plabs_detect_pupil(eye_left_file, eye_left_time_file, 
+if not os.path.exists(os.path.join(output_dir, 'pupil_left_calibration.npz')):
+    
+    print("\n=== Finding pupil locations ===\n")
+    
+    pupil_left_calibration = vedb_gaze.pupil_detection_pl.plabs_detect_pupil(eye_left_file, eye_left_time_file, 
+                                                                 start_frame=calibration_start_frame_pupil_left,
+                                                                 end_frame=calibration_end_frame_pupil_left,
                                                                  progress_bar=tqdm.tqdm,)
-    pupil_right_all = vedb_gaze.pupil_detection_pl.plabs_detect_pupil(eye_right_file, eye_right_time_file, 
+    
+    pupil_right_calibration = vedb_gaze.pupil_detection_pl.plabs_detect_pupil(eye_right_file, eye_right_time_file, 
+                                                                 start_frame=calibration_start_frame_pupil_right,
+                                                                 end_frame=calibration_end_frame_pupil_right,
                                                                  progress_bar=tqdm.tqdm,)
-    np.savez(os.path.join(output_dir, 'pupil_left_all.npz'), **pupil_left_all)
-    np.savez(os.path.join(output_dir, 'pupil_right_all.npz'), **pupil_right_all)
+    
+    pupil_left_validation = vedb_gaze.pupil_detection_pl.plabs_detect_pupil(eye_left_file, eye_left_time_file, 
+                                                                 start_frame=validation_start_frame_pupil_left,
+                                                                 end_frame=validation_end_frame_pupil_left,
+                                                                 progress_bar=tqdm.tqdm,)
+    
+    pupil_right_validation = vedb_gaze.pupil_detection_pl.plabs_detect_pupil(eye_right_file, eye_right_time_file, 
+                                                                 start_frame=validation_start_frame_pupil_right,
+                                                                 end_frame=validation_end_frame_pupil_right,
+                                                                 progress_bar=tqdm.tqdm,)
+    
+    # Save the pupil calibration files
+    np.savez(os.path.join(output_dir, 'pupil_left_calibration.npz'), **pupil_left_calibration)
+    np.savez(os.path.join(output_dir, 'pupil_right_calibration.npz'), **pupil_right_calibration)
+    np.savez(os.path.join(output_dir, 'pupil_left_validation.npz'), **pupil_left_validation)
+    np.savez(os.path.join(output_dir, 'pupil_right_validation.npz'), **pupil_right_validation)
+    
+    # get all pupils if running on full session
+    if args.wholeSession:
+        pupil_left_all = vedb_gaze.pupil_detection_pl.plabs_detect_pupil(eye_left_file, eye_left_time_file, 
+                                                                     progress_bar=tqdm.tqdm,)
+        pupil_right_all = vedb_gaze.pupil_detection_pl.plabs_detect_pupil(eye_right_file, eye_right_time_file, 
+                                                                     progress_bar=tqdm.tqdm,)
+        np.savez(os.path.join(output_dir, 'pupil_left_all.npz'), **pupil_left_all)
+        np.savez(os.path.join(output_dir, 'pupil_right_all.npz'), **pupil_right_all)
 
 ################
 # Step 3: perform calibration
 ################
-print("\n=== Starting calibration ===\n")
 
-calibration_left = vedb_gaze.calibration.Calibration(pupil_left_calibration, calibration_markers, (world_vid_size[1], world_vid_size[0]), 
-                                                     calibration_type='monocular_pl')
-calibration_right = vedb_gaze.calibration.Calibration(pupil_right_calibration, calibration_markers, (world_vid_size[1], world_vid_size[0]),
-                                                      calibration_type='monocular_pl')
+if not os.path.exists(os.path.join(output_dir, 'calibration_left.npz')):
 
-# Save the calibration files
-np.savez(os.path.join(output_dir, 'calibration_left.npz'), **calibration_left)
-np.savez(os.path.join(output_dir, 'calibration_right.npz'), **pupil_right_all)
+    print("\n=== Starting calibration ===\n")
+    
+    # step 1: filter for spurious detections
+    calibration_markers_filtered = vedb_gaze.marker_parsing.find_epochs(
+            calibration_markers, world_time)
+    
+    calibration_left = vedb_gaze.calibration.Calibration(pupil_left_calibration, 
+                                                         calibration_markers_filtered, 
+                                                         (world_vid_size[1], world_vid_size[0]), 
+                                                         calibration_type='monocular_pl',
+                                                         max_stds_for_outliers=3.0,)
+    calibration_right = vedb_gaze.calibration.Calibration(pupil_right_calibration, 
+                                                          calibration_markers_filtered, 
+                                                          (world_vid_size[1], world_vid_size[0]),
+                                                          calibration_type='monocular_pl',
+                                                          max_stds_for_outliers=3.0,)
+    
+    # Save the calibration files
+    np.savez(os.path.join(output_dir, 'calibration_left.npz'), **calibration_left)
+    np.savez(os.path.join(output_dir, 'calibration_right.npz'), **pupil_right_all)
 
 
 ################
 # Step 4: map gaze
 ################
-print("\n=== Gaze mapping ===\n")
 
-gaze_left_calibration = calibration_left.map(pupil_left_calibration)
-gaze_right_calibration = calibration_right.map(pupil_right_calibration)
+if not os.path.exists(os.path.join(output_dir, 'gaze_calibration_left.npz')):
 
-# compute all of gaze mapping if whole session
-if args.wholeSession:
-    gaze_left_all = calibration_left.map(pupil_left_all)
-    gaze_right_all = calibration_right.map(pupil_right_all)
-
-# Save the gaze mappings
-np.savez(os.path.join(output_dir, 'gaze_calibration_left.npz'), **gaze_left_calibration)
-np.savez(os.path.join(output_dir, 'gaze_calibration_right.npz'), **gaze_right_calibration)
-if args.wholeSession:
-    np.savez(os.path.join(output_dir, 'gaze_left.npz'), **gaze_left_all)
-    np.savez(os.path.join(output_dir, 'gaze_right.npz'), **gaze_right_all)
+    print("\n=== Gaze mapping ===\n")
+    
+    gaze_left_calibration = calibration_left.map(pupil_left_calibration)
+    gaze_right_calibration = calibration_right.map(pupil_right_calibration)
+    
+    # compute all of gaze mapping if whole session
+    if args.wholeSession:
+        gaze_left_all = calibration_left.map(pupil_left_all)
+        gaze_right_all = calibration_right.map(pupil_right_all)
+    
+    # Save the gaze mappings
+    np.savez(os.path.join(output_dir, 'gaze_calibration_left.npz'), **gaze_left_calibration)
+    np.savez(os.path.join(output_dir, 'gaze_calibration_right.npz'), **gaze_right_calibration)
+    if args.wholeSession:
+        np.savez(os.path.join(output_dir, 'gaze_left.npz'), **gaze_left_all)
+        np.savez(os.path.join(output_dir, 'gaze_right.npz'), **gaze_right_all)
 
 
 ################
 # Step 5: find validation markers
 ################
-print("\n=== Finding validation markers ===\n")
-validation_markers = vedb_gaze.marker_detection.find_checkerboard(world_vid_file, world_time_file, 
-                                                            start_frame=validation_start_frame, 
-                                                            end_frame=validation_end_frame, 
-                                                            scale=0.5, 
-                                                            progress_bar=tqdm.tqdm)
-# save the calibration markers
-np.savez(os.path.join(output_dir, 'validation_markers.npz'), **validation_markers)
+
+if not os.path.exists(os.path.join(output_dir, 'validation_markers.npz')):
+
+    print("\n=== Finding validation markers ===\n")
+    validation_markers = vedb_gaze.marker_detection.find_checkerboard(world_vid_file, world_time_file, 
+                                                                start_frame=validation_start_frame, 
+                                                                end_frame=validation_end_frame, 
+                                                                scale=0.5, 
+                                                                progress_bar=tqdm.tqdm)
+    # save the calibration markers
+    np.savez(os.path.join(output_dir, 'validation_markers.npz'), **validation_markers)
 
 ################
 # Step 6: compute error
 ################
-print("\n=== Computing error===\n")
 
-gaze_left_validation = calibration_left.map(pupil_left_validation)
-gaze_right_validation = calibration_right.map(pupil_right_validation)
+if not os.path.exists(os.path.join(output_dir, 'error_left.npz')):
 
-error_left = vedb_gaze.error_computation.compute_error(validation_markers, gaze_left_validation, 
-                                                      image_resolution=world_vid_size[::-1], 
-                                                      lambd=1.0, )
-error_right = vedb_gaze.error_computation.compute_error(validation_markers, gaze_right_validation, 
-                                                      image_resolution=world_vid_size[::-1], 
-                                                      lambd=1.0, )
-if args.wholeSession:
-    error_left_all = vedb_gaze.error_computation.compute_error(validation_markers, gaze_left_all, 
-                                                      image_resolution=world_vid_size[::-1], 
-                                                      lambd=1.0, )
-    error_right_all = vedb_gaze.error_computation.compute_error(validation_markers, gaze_right_all, 
-                                                      image_resolution=world_vid_size[::-1], 
-                                                      lambd=1.0, )
-
-# Save the gaze error
-np.savez(os.path.join(output_dir, 'error_left.npz'), **error_left)
-np.savez(os.path.join(output_dir, 'error_right.npz'), **error_right)
-if args.wholeSession:
-    np.savez(os.path.join(output_dir, 'error_left_all.npz'), **error_left_all)
-np.savez(os.path.join(output_dir, 'error_right_all.npz'), **error_right_all)
+    print("\n=== Computing error===\n")
+    
+    gaze_left_validation = calibration_left.map(pupil_left_validation)
+    gaze_right_validation = calibration_right.map(pupil_right_validation)
+    
+    error_left = vedb_gaze.error_computation.compute_error(validation_markers, gaze_left_validation, 
+                                                          image_resolution=world_vid_size[::-1], 
+                                                          lambd=1.0, )
+    error_right = vedb_gaze.error_computation.compute_error(validation_markers, gaze_right_validation, 
+                                                          image_resolution=world_vid_size[::-1], 
+                                                          lambd=1.0, )
+    if args.wholeSession:
+        error_left_all = vedb_gaze.error_computation.compute_error(validation_markers, gaze_left_all, 
+                                                          image_resolution=world_vid_size[::-1], 
+                                                          lambd=1.0, )
+        error_right_all = vedb_gaze.error_computation.compute_error(validation_markers, gaze_right_all, 
+                                                          image_resolution=world_vid_size[::-1], 
+                                                          lambd=1.0, )
+    
+    # Save the gaze error
+    np.savez(os.path.join(output_dir, 'error_left.npz'), **error_left)
+    np.savez(os.path.join(output_dir, 'error_right.npz'), **error_right)
+    if args.wholeSession:
+        np.savez(os.path.join(output_dir, 'error_left_all.npz'), **error_left_all)
+    np.savez(os.path.join(output_dir, 'error_right_all.npz'), **error_right_all)
