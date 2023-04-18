@@ -124,59 +124,66 @@ else:
 # Step 2: detect pupils during calibration
 ################
 
-if not os.path.exists(os.path.join(output_dir, 'pupil_left_calibration.npz')):
+if not os.path.exists(os.path.join(output_dir, 'pupil_calibration.npz')):
     
     print("\n=== Finding pupil locations ===\n")
     
-    pupil_left_calibration = vedb_gaze.pupil_detection_pl.plabs_detect_pupil(eye_left_file, eye_left_time_file, 
+    pupil_calibration = dict(
+        left = vedb_gaze.pupil_detection_pl.plabs_detect_pupil(eye_left_file, eye_left_time_file, 
                                                                  start_frame=calibration_start_frame_pupil_left,
                                                                  end_frame=calibration_end_frame_pupil_left,
-                                                                 progress_bar=tqdm.tqdm,)
-    
-    pupil_right_calibration = vedb_gaze.pupil_detection_pl.plabs_detect_pupil(eye_right_file, eye_right_time_file, 
+                                                                 progress_bar=tqdm.tqdm,),
+        right = vedb_gaze.pupil_detection_pl.plabs_detect_pupil(eye_right_file, eye_right_time_file, 
                                                                  start_frame=calibration_start_frame_pupil_right,
                                                                  end_frame=calibration_end_frame_pupil_right,
                                                                  progress_bar=tqdm.tqdm,)
+        )
     
-    pupil_left_validation = vedb_gaze.pupil_detection_pl.plabs_detect_pupil(eye_left_file, eye_left_time_file, 
+    pupil_validation = dict(
+        left = vedb_gaze.pupil_detection_pl.plabs_detect_pupil(eye_left_file, eye_left_time_file, 
                                                                  start_frame=validation_start_frame_pupil_left,
                                                                  end_frame=validation_end_frame_pupil_left,
-                                                                 progress_bar=tqdm.tqdm,)
-    
-    pupil_right_validation = vedb_gaze.pupil_detection_pl.plabs_detect_pupil(eye_right_file, eye_right_time_file, 
+                                                                 progress_bar=tqdm.tqdm,),
+        right = vedb_gaze.pupil_detection_pl.plabs_detect_pupil(eye_right_file, eye_right_time_file, 
                                                                  start_frame=validation_start_frame_pupil_right,
                                                                  end_frame=validation_end_frame_pupil_right,
                                                                  progress_bar=tqdm.tqdm,)
+        )
     
     # Save the pupil calibration files
-    np.savez(os.path.join(output_dir, 'pupil_left_calibration.npz'), **pupil_left_calibration)
-    np.savez(os.path.join(output_dir, 'pupil_right_calibration.npz'), **pupil_right_calibration)
-    np.savez(os.path.join(output_dir, 'pupil_left_validation.npz'), **pupil_left_validation)
-    np.savez(os.path.join(output_dir, 'pupil_right_validation.npz'), **pupil_right_validation)
+    np.savez(os.path.join(output_dir, 'pupil_calibration.npz'), **pupil_calibration)
+    np.savez(os.path.join(output_dir, 'pupil_validation.npz'), **pupil_validation)
     
     # get all pupils if running on full session
     if args.wholeSession:
-        pupil_left_all = vedb_gaze.pupil_detection_pl.plabs_detect_pupil(eye_left_file, eye_left_time_file, 
+        pupil = dict(
+            left = vedb_gaze.pupil_detection_pl.plabs_detect_pupil(eye_left_file, eye_left_time_file, 
+                                                                     progress_bar=tqdm.tqdm,),
+            right = vedb_gaze.pupil_detection_pl.plabs_detect_pupil(eye_right_file, eye_right_time_file, 
                                                                      progress_bar=tqdm.tqdm,)
-        pupil_right_all = vedb_gaze.pupil_detection_pl.plabs_detect_pupil(eye_right_file, eye_right_time_file, 
-                                                                     progress_bar=tqdm.tqdm,)
-        np.savez(os.path.join(output_dir, 'pupil_left_all.npz'), **pupil_left_all)
-        np.savez(os.path.join(output_dir, 'pupil_right_all.npz'), **pupil_right_all)
+            )
+        
+        np.savez(os.path.join(output_dir, 'pupil_all.npz'), **pupil)
         
 else:
-    pupil_left_calibration = np.load(os.path.join(output_dir, 'pupil_left_calibration.npz'))
-    pupil_right_calibration = np.load(os.path.join(output_dir, 'pupil_right_calibration.npz'))
-    pupil_left_validation = np.load(os.path.join(output_dir, 'pupil_left_validation.npz'))
-    pupil_right_validation = np.load(os.path.join(output_dir, 'pupil_right_validation.npz'))
+    pupil_calibration = np.load(os.path.join(output_dir, 'pupil_calibration.npz'))
+    pupil_validation = np.load(os.path.join(output_dir, 'pupil_validation.npz'))
     if args.wholeSession:
-        pupil_left_all = np.load(os.path.join(output_dir, 'pupil_left_all.npz'))
-        pupil_right_all = np.load(os.path.join(output_dir, 'pupil_right_all.npz'))
+        pupil = np.load(os.path.join(output_dir, 'pupil_all.npz'))
+        
+# Combine pupils into single dictionary
+pupil_calibration = dict(
+                left = vedb_gaze.utils.stack_arraydicts(pupil_calibration['left'], 
+                                                        pupil_validation['left']),
+                right = vedb_gaze.utils.stack_arraydicts(pupil_calibration['right'], 
+                                                        pupil_validation['right']),
+            )
 
 ################
 # Step 3: perform calibration
 ################
 
-if not os.path.exists(os.path.join(output_dir, 'calibration_left.npz')):
+if not os.path.exists(os.path.join(output_dir, 'calibration.npz')):
 
     print("\n=== Starting calibration ===\n")
     
@@ -185,55 +192,54 @@ if not os.path.exists(os.path.join(output_dir, 'calibration_left.npz')):
             calibration_markers, world_time)
     calibration_markers_filtered = calibration_markers_filtered[0] # back to dict
     
-    calibration_left = vedb_gaze.calibration.Calibration(pupil_left_calibration, 
+    calibration = {}
+    calibration['left'] = vedb_gaze.calibration.Calibration(pupil_calibration['left'], 
                                                          calibration_markers_filtered, 
                                                          (world_vid_size[1], world_vid_size[0]), 
                                                          calibration_type='monocular_pl',
                                                          max_stds_for_outliers=3.0,)
-    calibration_right = vedb_gaze.calibration.Calibration(pupil_right_calibration, 
+    calibration['right'] = vedb_gaze.calibration.Calibration(pupil_calibration['right'], 
                                                           calibration_markers_filtered, 
                                                           (world_vid_size[1], world_vid_size[0]),
                                                           calibration_type='monocular_pl',
                                                           max_stds_for_outliers=3.0,)
     
     # Save the calibration files
-    np.savez(os.path.join(output_dir, 'calibration_left.npz'), **calibration_left)
-    np.savez(os.path.join(output_dir, 'calibration_right.npz'), **calibration_right)
+    np.savez(os.path.join(output_dir, 'calibration.npz'), **calibration)
 
 else:
-    calibration_left = np.load(os.path.join(output_dir, 'calibration_left.npz'))
-    calibration_right = np.load(os.path.join(output_dir, 'calibration_right.npz'))
+    calibration = np.load(os.path.join(output_dir, 'calibration.npz'))
+    
 
 
 ################
 # Step 4: map gaze
 ################
 
-if not os.path.exists(os.path.join(output_dir, 'gaze_calibration_left.npz')):
+if not os.path.exists(os.path.join(output_dir, 'gaze_calibration.npz')):
 
     print("\n=== Gaze mapping ===\n")
     
-    gaze_left_calibration = calibration_left.map(pupil_left_calibration)
-    gaze_right_calibration = calibration_right.map(pupil_right_calibration)
+    gaze_calibration = {}
+    for lr in ['left', 'right']:
+        gaze_calibration[lr] = calibration[lr].map(pupil_calibration[lr])
     
     # compute all of gaze mapping if whole session
     if args.wholeSession:
-        gaze_left_all = calibration_left.map(pupil_left_all)
-        gaze_right_all = calibration_right.map(pupil_right_all)
+        gaze = {}
+        for lr in ['left','right']:
+            gaze[lr] = calibration[lr].map(pupil[lr])
+
     
     # Save the gaze mappings
-    np.savez(os.path.join(output_dir, 'gaze_calibration_left.npz'), **gaze_left_calibration)
-    np.savez(os.path.join(output_dir, 'gaze_calibration_right.npz'), **gaze_right_calibration)
+    np.savez(os.path.join(output_dir, 'gaze_calibration.npz'), **gaze_calibration)
     if args.wholeSession:
-        np.savez(os.path.join(output_dir, 'gaze_left.npz'), **gaze_left_all)
-        np.savez(os.path.join(output_dir, 'gaze_right.npz'), **gaze_right_all)
+        np.savez(os.path.join(output_dir, 'gaze.npz'), **gaze)
         
 else:
-    gaze_left_calibration = np.load(os.path.join(output_dir, 'gaze_calibration_left.npz'))
-    gaze_right_calibration = np.load(os.path.join(output_dir, 'gaze_calibration_right.npz'))
+    gaze_calibration = np.load(os.path.join(output_dir, 'gaze_calibration.npz'))
     if args.wholeSession:
-        gaze_left_all = np.load(os.path.join(output_dir, 'gaze_left.npz'))
-        gaze_right_all = np.load(os.path.join(output_dir, 'gaze_right.npz'))
+        gaze = np.load(os.path.join(output_dir, 'gaze.npz'))
 
 
 ################
