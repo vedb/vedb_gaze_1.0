@@ -116,6 +116,9 @@ if not os.path.exists(os.path.join(output_dir, 'calibration_markers.npz')):
     # note: might want to change scale to 1 to run on full-size videos. 
     # save the calibration markers
     np.savez(os.path.join(output_dir, 'calibration_markers.npz'), **calibration_markers)
+    
+else:
+    calibration_markers = np.load(os.path.join(output_dir, 'calibration_markers.npz'))
 
 ################
 # Step 2: detect pupils during calibration
@@ -159,6 +162,15 @@ if not os.path.exists(os.path.join(output_dir, 'pupil_left_calibration.npz')):
                                                                      progress_bar=tqdm.tqdm,)
         np.savez(os.path.join(output_dir, 'pupil_left_all.npz'), **pupil_left_all)
         np.savez(os.path.join(output_dir, 'pupil_right_all.npz'), **pupil_right_all)
+        
+else:
+    pupil_left_calibration = np.load(os.path.join(output_dir, 'pupil_left_calibration.npz'))
+    pupil_right_calibration = np.load(os.path.join(output_dir, 'pupil_right_calibration.npz'))
+    pupil_left_validation = np.load(os.path.join(output_dir, 'pupil_left_validation.npz'))
+    pupil_right_validation = np.load(os.path.join(output_dir, 'pupil_right_validation.npz'))
+    if args.wholeSession:
+        pupil_left_all = np.load(os.path.join(output_dir, 'pupil_left_all.npz'))
+        pupil_right_all = np.load(os.path.join(output_dir, 'pupil_right_all.npz'))
 
 ################
 # Step 3: perform calibration
@@ -171,6 +183,7 @@ if not os.path.exists(os.path.join(output_dir, 'calibration_left.npz')):
     # step 1: filter for spurious detections
     calibration_markers_filtered = vedb_gaze.marker_parsing.find_epochs(
             calibration_markers, world_time)
+    calibration_markers_filtered = calibration_markers_filtered[0] # back to dict
     
     calibration_left = vedb_gaze.calibration.Calibration(pupil_left_calibration, 
                                                          calibration_markers_filtered, 
@@ -185,7 +198,11 @@ if not os.path.exists(os.path.join(output_dir, 'calibration_left.npz')):
     
     # Save the calibration files
     np.savez(os.path.join(output_dir, 'calibration_left.npz'), **calibration_left)
-    np.savez(os.path.join(output_dir, 'calibration_right.npz'), **pupil_right_all)
+    np.savez(os.path.join(output_dir, 'calibration_right.npz'), **calibration_right)
+
+else:
+    calibration_left = np.load(os.path.join(output_dir, 'calibration_left.npz'))
+    calibration_right = np.load(os.path.join(output_dir, 'calibration_right.npz'))
 
 
 ################
@@ -210,6 +227,13 @@ if not os.path.exists(os.path.join(output_dir, 'gaze_calibration_left.npz')):
     if args.wholeSession:
         np.savez(os.path.join(output_dir, 'gaze_left.npz'), **gaze_left_all)
         np.savez(os.path.join(output_dir, 'gaze_right.npz'), **gaze_right_all)
+        
+else:
+    gaze_left_calibration = np.load(os.path.join(output_dir, 'gaze_calibration_left.npz'))
+    gaze_right_calibration = np.load(os.path.join(output_dir, 'gaze_calibration_right.npz'))
+    if args.wholeSession:
+        gaze_left_all = np.load(os.path.join(output_dir, 'gaze_left.npz'))
+        gaze_right_all = np.load(os.path.join(output_dir, 'gaze_right.npz'))
 
 
 ################
@@ -226,6 +250,9 @@ if not os.path.exists(os.path.join(output_dir, 'validation_markers.npz')):
                                                                 progress_bar=tqdm.tqdm)
     # save the calibration markers
     np.savez(os.path.join(output_dir, 'validation_markers.npz'), **validation_markers)
+    
+else:
+    validation_markers = np.load(os.path.join(output_dir, 'validation_markers.npz'))
 
 ################
 # Step 6: compute error
