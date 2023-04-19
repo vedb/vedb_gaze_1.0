@@ -118,7 +118,7 @@ if not os.path.exists(os.path.join(output_dir, 'calibration_markers.npz')):
     np.savez(os.path.join(output_dir, 'calibration_markers.npz'), **calibration_markers)
     
 else:
-    calibration_markers = np.load(os.path.join(output_dir, 'calibration_markers.npz'))
+    calibration_markers = np.load(os.path.join(output_dir, 'calibration_markers.npz'), allow_pickle=True)
 
 ################
 # Step 2: detect pupils during calibration
@@ -165,19 +165,20 @@ if not os.path.exists(os.path.join(output_dir, 'pupil_calibration.npz')):
         
         np.savez(os.path.join(output_dir, 'pupil_all.npz'), **pupil)
         
-else:
-    pupil_calibration = np.load(os.path.join(output_dir, 'pupil_calibration.npz'))
-    pupil_validation = np.load(os.path.join(output_dir, 'pupil_validation.npz'))
-    if args.wholeSession:
-        pupil = np.load(os.path.join(output_dir, 'pupil_all.npz'))
+        # Combine pupils into single dictionary
+        pupil_calibration = dict(
+                        left = vedb_gaze.utils.stack_arraydicts(pupil_calibration['left'], 
+                                                                pupil_validation['left']),
+                        right = vedb_gaze.utils.stack_arraydicts(pupil_calibration['right'], 
+                                                                pupil_validation['right']),
+                    )
         
-# Combine pupils into single dictionary
-pupil_calibration = dict(
-                left = vedb_gaze.utils.stack_arraydicts(pupil_calibration['left'], 
-                                                        pupil_validation['left']),
-                right = vedb_gaze.utils.stack_arraydicts(pupil_calibration['right'], 
-                                                        pupil_validation['right']),
-            )
+else:
+    pupil_calibration = np.load(os.path.join(output_dir, 'pupil_calibration.npz'), allow_pickle=True)
+    pupil_validation = np.load(os.path.join(output_dir, 'pupil_validation.npz'), allow_pickle=True)
+    if args.wholeSession:
+        pupil = np.load(os.path.join(output_dir, 'pupil_all.npz'), allow_pickle=True)
+        
 
 ################
 # Step 3: perform calibration
@@ -205,10 +206,10 @@ if not os.path.exists(os.path.join(output_dir, 'calibration.npz')):
                                                           max_stds_for_outliers=3.0,)
     
     # Save the calibration files
-    np.savez(os.path.join(output_dir, 'calibration.npz'), **calibration)
+    np.save(os.path.join(output_dir, 'calibration.npy'), **calibration)
 
 else:
-    calibration = np.load(os.path.join(output_dir, 'calibration.npz'))
+    calibration = np.load(os.path.join(output_dir, 'calibration.npz'), allow_pickle=True)
     
 
 
@@ -237,9 +238,9 @@ if not os.path.exists(os.path.join(output_dir, 'gaze_calibration.npz')):
         np.savez(os.path.join(output_dir, 'gaze.npz'), **gaze)
         
 else:
-    gaze_calibration = np.load(os.path.join(output_dir, 'gaze_calibration.npz'))
+    gaze_calibration = np.load(os.path.join(output_dir, 'gaze_calibration.npz'), allow_pickle=True)
     if args.wholeSession:
-        gaze = np.load(os.path.join(output_dir, 'gaze.npz'))
+        gaze = np.load(os.path.join(output_dir, 'gaze.npz'), allow_pickle=True)
 
 
 ################
@@ -258,36 +259,39 @@ if not os.path.exists(os.path.join(output_dir, 'validation_markers.npz')):
     np.savez(os.path.join(output_dir, 'validation_markers.npz'), **validation_markers)
     
 else:
-    validation_markers = np.load(os.path.join(output_dir, 'validation_markers.npz'))
+    validation_markers = np.load(os.path.join(output_dir, 'validation_markers.npz'), allow_pickle=True)
 
 ################
 # Step 6: compute error
 ################
 
-if not os.path.exists(os.path.join(output_dir, 'error_left.npz')):
+if not os.path.exists(os.path.join(output_dir, 'error_validation.npz')):
 
     print("\n=== Computing error===\n")
     
-    gaze_left_validation = calibration_left.map(pupil_left_validation)
-    gaze_right_validation = calibration_right.map(pupil_right_validation)
+    # filter validation markers for spurious detections
+    validation_markers_filtered = vedb_gaze.marker_parsing.find_epochs( 
+        validation_markers, world_time, 
+        aspect_ratio_threshold=None, # Don't do aspect ratio thresholding for validation
+        )
     
-    error_left = vedb_gaze.error_computation.compute_error(validation_markers, gaze_left_validation, 
+    error_validation = {}
+    for lr in ['left', 'right']:
+        error_validation[lr] = [vedb_gaze.error_computation.compute_error(ei, gaze_calibration[lr], 
                                                           image_resolution=world_vid_size[::-1], 
                                                           lambd=1.0, )
-    error_right = vedb_gaze.error_computation.compute_error(validation_markers, gaze_right_validation, 
-                                                          image_resolution=world_vid_size[::-1], 
-                                                          lambd=1.0, )
+                                for ei in validation_markers_filtered]
+    
     if args.wholeSession:
-        error_left_all = vedb_gaze.error_computation.compute_error(validation_markers, gaze_left_all, 
+        error = {}
+        for lr in ['left', 'right']:
+            error[lr] = [vedb_gaze.error_computation.compute_error(ei, gaze[lr], 
                                                           image_resolution=world_vid_size[::-1], 
                                                           lambd=1.0, )
-        error_right_all = vedb_gaze.error_computation.compute_error(validation_markers, gaze_right_all, 
-                                                          image_resolution=world_vid_size[::-1], 
-                                                          lambd=1.0, )
+                         for ei in validation_markers_filtered]
     
     # Save the gaze error
-    np.savez(os.path.join(output_dir, 'error_left.npz'), **error_left)
-    np.savez(os.path.join(output_dir, 'error_right.npz'), **error_right)
+    np.savez(os.path.join(output_dir, 'error_validation.npz'), **error_validation)
+    
     if args.wholeSession:
-        np.savez(os.path.join(output_dir, 'error_left_all.npz'), **error_left_all)
-    np.savez(os.path.join(output_dir, 'error_right_all.npz'), **error_right_all)
+        np.savez(os.path.join(output_dir, 'error.npz'), **error)
