@@ -124,7 +124,7 @@ else:
 # Step 2: detect pupils during calibration
 ################
 
-if not os.path.exists(os.path.join(output_dir, 'pupil_calibration.npz')):
+if not os.path.exists(os.path.join(output_dir, 'pupil_calibration.npy')):
     
     print("\n=== Finding pupil locations ===\n")
     
