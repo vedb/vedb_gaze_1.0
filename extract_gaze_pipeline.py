@@ -151,8 +151,8 @@ if not os.path.exists(os.path.join(output_dir, 'pupil_calibration.npz')):
         )
     
     # Save the pupil calibration files
-    np.savez(os.path.join(output_dir, 'pupil_calibration.npz'), **pupil_calibration)
-    np.savez(os.path.join(output_dir, 'pupil_validation.npz'), **pupil_validation)
+    np.save(os.path.join(output_dir, 'pupil_calibration.npy'), pupil_calibration)
+    np.save(os.path.join(output_dir, 'pupil_validation.npy'), pupil_validation)
     
     # get all pupils if running on full session
     if args.wholeSession:
@@ -163,7 +163,7 @@ if not os.path.exists(os.path.join(output_dir, 'pupil_calibration.npz')):
                                                                      progress_bar=tqdm.tqdm,)
             )
         
-        np.savez(os.path.join(output_dir, 'pupil_all.npz'), **pupil)
+        np.save(os.path.join(output_dir, 'pupil_all.npy'), pupil)
         
         # Combine pupils into single dictionary
         pupil_calibration = dict(
@@ -174,17 +174,17 @@ if not os.path.exists(os.path.join(output_dir, 'pupil_calibration.npz')):
                     )
         
 else:
-    pupil_calibration = np.load(os.path.join(output_dir, 'pupil_calibration.npz'), allow_pickle=True)
-    pupil_validation = np.load(os.path.join(output_dir, 'pupil_validation.npz'), allow_pickle=True)
+    pupil_calibration = np.load(os.path.join(output_dir, 'pupil_calibration.npy'), allow_pickle=True).item()
+    pupil_validation = np.load(os.path.join(output_dir, 'pupil_validation.npy'), allow_pickle=True).item()
     if args.wholeSession:
-        pupil = np.load(os.path.join(output_dir, 'pupil_all.npz'), allow_pickle=True)
+        pupil = np.load(os.path.join(output_dir, 'pupil_all.npy'), allow_pickle=True).item()
         
 
 ################
 # Step 3: perform calibration
 ################
 
-if not os.path.exists(os.path.join(output_dir, 'calibration.npz')):
+if not os.path.exists(os.path.join(output_dir, 'calibration.npy')):
 
     print("\n=== Starting calibration ===\n")
     
@@ -209,7 +209,7 @@ if not os.path.exists(os.path.join(output_dir, 'calibration.npz')):
     np.save(os.path.join(output_dir, 'calibration.npy'), **calibration)
 
 else:
-    calibration = np.load(os.path.join(output_dir, 'calibration.npz'), allow_pickle=True)
+    calibration = np.load(os.path.join(output_dir, 'calibration.npy'), allow_pickle=True).item()
     
 
 
@@ -217,7 +217,7 @@ else:
 # Step 4: map gaze
 ################
 
-if not os.path.exists(os.path.join(output_dir, 'gaze_calibration.npz')):
+if not os.path.exists(os.path.join(output_dir, 'gaze_calibration.npy')):
 
     print("\n=== Gaze mapping ===\n")
     
@@ -233,14 +233,14 @@ if not os.path.exists(os.path.join(output_dir, 'gaze_calibration.npz')):
 
     
     # Save the gaze mappings
-    np.savez(os.path.join(output_dir, 'gaze_calibration.npz'), **gaze_calibration)
+    np.save(os.path.join(output_dir, 'gaze_calibration.npy'), gaze_calibration)
     if args.wholeSession:
-        np.savez(os.path.join(output_dir, 'gaze.npz'), **gaze)
+        np.save(os.path.join(output_dir, 'gaze.npy'), gaze)
         
 else:
-    gaze_calibration = np.load(os.path.join(output_dir, 'gaze_calibration.npz'), allow_pickle=True)
+    gaze_calibration = np.load(os.path.join(output_dir, 'gaze_calibration.npz'), allow_pickle=True).item()
     if args.wholeSession:
-        gaze = np.load(os.path.join(output_dir, 'gaze.npz'), allow_pickle=True)
+        gaze = np.load(os.path.join(output_dir, 'gaze.npy'), allow_pickle=True).item()
 
 
 ################
@@ -265,7 +265,7 @@ else:
 # Step 6: compute error
 ################
 
-if not os.path.exists(os.path.join(output_dir, 'error_validation.npz')):
+if not os.path.exists(os.path.join(output_dir, 'error_validation.npy')):
 
     print("\n=== Computing error===\n")
     
@@ -291,7 +291,7 @@ if not os.path.exists(os.path.join(output_dir, 'error_validation.npz')):
                          for ei in validation_markers_filtered]
     
     # Save the gaze error
-    np.savez(os.path.join(output_dir, 'error_validation.npz'), **error_validation)
+    np.save(os.path.join(output_dir, 'error_validation.npy'), error_validation)
     
     if args.wholeSession:
-        np.savez(os.path.join(output_dir, 'error.npz'), **error)
+        np.save(os.path.join(output_dir, 'error.npy'), error)
