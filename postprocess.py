@@ -9,6 +9,7 @@ Post-Processing of the eye camera images and T265 kinematic head
 data
 @author: 2023-03-18 - Michael Davis
 @author: 2023-03-27 - Michelle Greene going back to argparse
+@author: 2023-04-24 - Michelle Greene removing ODO for speed
 """
 
 ###################
@@ -100,94 +101,94 @@ def specify_marker_epochs(timestamps, yaml_file, fps=30):
 #########################
 
 
-def start_end_plot(odometry, marker_times, yaml_file):
-    """Use a plot fo find the marker times?
-    TODO: add more info here
-    """
-    # Read in the marker validation times
-    all_times = marker_times
+# def start_end_plot(odometry, marker_times, yaml_file):
+#     """Use a plot fo find the marker times?
+#     TODO: add more info here
+#     """
+#     # Read in the marker validation times
+#     all_times = marker_times
 
-    # Convert times
-    times = np.array(odometry.time.values)
-    time_convert = np.zeros(len(times))
-    for i in range(len(times)):
-        time_convert[i] = (
-            odometry.time.values[i] - odometry.time.values[0]
-        ) / 1000000000
+#     # Convert times
+#     times = np.array(odometry.time.values)
+#     time_convert = np.zeros(len(times))
+#     for i in range(len(times)):
+#         time_convert[i] = (
+#             odometry.time.values[i] - odometry.time.values[0]
+#         ) / 1000000000
 
-    # Plotting accesories
-    input_value = all_times["validation_orig_times"][0][1]
-    indx = (np.abs(time_convert - input_value)).argmin()
-    samps = 200 * 120
+#     # Plotting accesories
+#     input_value = all_times["validation_orig_times"][0][1]
+#     indx = (np.abs(time_convert - input_value)).argmin()
+#     samps = 200 * 120
 
-    # smooth data for better viewing purposes
-    pitch_vel = signal.savgol_filter(odometry.angular_velocity[:, 0], 101, 2)
-    yaw_vel = signal.savgol_filter(odometry.angular_velocity[:, 1], 101, 2)
+#     # smooth data for better viewing purposes
+#     pitch_vel = signal.savgol_filter(odometry.angular_velocity[:, 0], 101, 2)
+#     yaw_vel = signal.savgol_filter(odometry.angular_velocity[:, 1], 101, 2)
 
-    # Start plotting
-    fig = go.Figure()
-    fig.add_trace(
-        go.Scatter(
-            x=odometry.time.values,
-            y=pitch_vel,
-            name="pitch",  # this sets its legend entry
-        )
-    )
-    fig.add_trace(
-        go.Scatter(
-            x=odometry.time.values, y=yaw_vel, name="yaw",  # this sets its legend entry
-        )
-    )
-    fig.update_layout(
-        title="Angular velocity odometry",
-        xaxis_title="Time stamps (datetime)",
-        yaxis_title="Angular Velocity (radians/second)",
-        # xaxis_range=[
-        #             odometry.time.values[indx], #this may be added back in the future - sometimes throws an out-of-bounds error
-        #             odometry.time.values[indx+samps]] #this may be added back in the future - sometimes throws an out-of-bounds error
-    )
-    fig.show()
+#     # Start plotting
+#     fig = go.Figure()
+#     fig.add_trace(
+#         go.Scatter(
+#             x=odometry.time.values,
+#             y=pitch_vel,
+#             name="pitch",  # this sets its legend entry
+#         )
+#     )
+#     fig.add_trace(
+#         go.Scatter(
+#             x=odometry.time.values, y=yaw_vel, name="yaw",  # this sets its legend entry
+#         )
+#     )
+#     fig.update_layout(
+#         title="Angular velocity odometry",
+#         xaxis_title="Time stamps (datetime)",
+#         yaxis_title="Angular Velocity (radians/second)",
+#         # xaxis_range=[
+#         #             odometry.time.values[indx], #this may be added back in the future - sometimes throws an out-of-bounds error
+#         #             odometry.time.values[indx+samps]] #this may be added back in the future - sometimes throws an out-of-bounds error
+#     )
+#     fig.show()
 
-    # Loop
-    done = False
-    times = []
+#     # Loop
+#     done = False
+#     times = []
 
-    while not done:
-        pitch_start = input("Pitch Timestamp Start (HH:mm:ss format): ")
-        pitch_end = input("Pitch Timestamp End (HH:mm:ss format): ")
-        yaw_start = input("Yaw Timestamp Start (HH:mm:ss format): ")
-        yaw_end = input("Yaw Timestamp End (HH:mm:ss format): ")
-        df_time = pd.Series(odometry.time[0].values)
-        pitch_start = datetime.combine(
-            df_time.dt.date.values[0],
-            datetime.strptime(pitch_start, "%H:%M:%S").time(),
-        )
-        pitch_end = datetime.combine(
-            df_time.dt.date.values[0], datetime.strptime(pitch_end, "%H:%M:%S").time(),
-        )
-        yaw_start = datetime.combine(
-            df_time.dt.date.values[0], datetime.strptime(yaw_start, "%H:%M:%S").time(),
-        )
-        yaw_end = datetime.combine(
-            df_time.dt.date.values[0], datetime.strptime(yaw_end, "%H:%M:%S").time()
-        )
-        tmp = {
-            "calibration": {
-                "pitch_start": pitch_start,
-                "pitch_end": pitch_end,
-                "yaw_start": yaw_start,
-                "yaw_end": yaw_end,
-            }
-        }
-        times.append(tmp)
-        next_calibration = input("Continue for another pitch/yaw calibration? (y/n) ")
-        done = next_calibration != "y"
+#     while not done:
+#         pitch_start = input("Pitch Timestamp Start (HH:mm:ss format): ")
+#         pitch_end = input("Pitch Timestamp End (HH:mm:ss format): ")
+#         yaw_start = input("Yaw Timestamp Start (HH:mm:ss format): ")
+#         yaw_end = input("Yaw Timestamp End (HH:mm:ss format): ")
+#         df_time = pd.Series(odometry.time[0].values)
+#         pitch_start = datetime.combine(
+#             df_time.dt.date.values[0],
+#             datetime.strptime(pitch_start, "%H:%M:%S").time(),
+#         )
+#         pitch_end = datetime.combine(
+#             df_time.dt.date.values[0], datetime.strptime(pitch_end, "%H:%M:%S").time(),
+#         )
+#         yaw_start = datetime.combine(
+#             df_time.dt.date.values[0], datetime.strptime(yaw_start, "%H:%M:%S").time(),
+#         )
+#         yaw_end = datetime.combine(
+#             df_time.dt.date.values[0], datetime.strptime(yaw_end, "%H:%M:%S").time()
+#         )
+#         tmp = {
+#             "calibration": {
+#                 "pitch_start": pitch_start,
+#                 "pitch_end": pitch_end,
+#                 "yaw_start": yaw_start,
+#                 "yaw_end": yaw_end,
+#             }
+#         }
+#         times.append(tmp)
+#         next_calibration = input("Continue for another pitch/yaw calibration? (y/n) ")
+#         done = next_calibration != "y"
 
-    # Save output
-    with open(yaml_file, mode="w", encoding="utf-8") as fid:
-        yaml.dump(times, fid)
+#     # Save output
+#     with open(yaml_file, mode="w", encoding="utf-8") as fid:
+#         yaml.dump(times, fid)
 
-    return times
+#     return times
 
 
 ####################################################
@@ -211,13 +212,13 @@ if __name__ == "__main__":
     print("** Marker Times Loaded")
 
     # Execute head calibration and timestamp functions
-    if os.path.exists(odo_times_yaml):
-        print("** Start & End points for head shakes and nods already exist")
-    else:
-        print("** Execute head calibration for nods and shakes...")
-        times = start_end_plot(
-            odometry=odometry_data, marker_times=marker_times, yaml_file=odo_times_yaml
-        )
-    print("** ODO Times Loaded")
+    # if os.path.exists(odo_times_yaml):
+    #     print("** Start & End points for head shakes and nods already exist")
+    # else:
+    #     print("** Execute head calibration for nods and shakes...")
+    #     times = start_end_plot(
+    #         odometry=odometry_data, marker_times=marker_times, yaml_file=odo_times_yaml
+    #     )
+    # print("** ODO Times Loaded")
 
     print("\n** DONE WITH SETTING MARKER TIMES ** \n")
