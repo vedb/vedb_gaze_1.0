@@ -129,9 +129,6 @@ def parse_plab_data(pupil_list, ref_list, mode="2d", min_calibration_confidence=
     return binocular, extracted_data
 
 
-### NEW
-
-
 def calibrate_2d_polynomial(
     cal_pt_cloud,
     screen_size=(1, 1),
@@ -216,7 +213,6 @@ def calibrate_2d_polynomial(
         )
 
 
-### /NEW
 def calibrate_2d_monocular(
     cal_pt_cloud,
     frame_size,
@@ -774,7 +770,13 @@ class Calibration(object):
 
     def save(self, fpath):
         """Save critical data to do mappings of pupil to gaze"""
-        np.savez(fpath, **self.calibration_data)
+        sdata = {}
+        for k, v in self.calibration_data.items():
+            if isinstance(v, np.ndarray):
+                sdata[k] = v
+            else:
+                sdata[k] = np.asarray(v, dtype='object')
+        np.savez(fpath, **sdata)
 
     @classmethod
     def _get_fpath(
@@ -862,7 +864,7 @@ class Calibration(object):
             )
             # Fill in `_id`` and `confidence` fields
             grid_pts_array_l["id"] = np.ones_like(
-                grid_pts_array_l["timestamp"], dtype=np.int64
+                grid_pts_array_l["timestamp"], dtype=int64
             )
             grid_pts_array_l["confidence"] = np.ones_like(
                 grid_pts_array_l["timestamp"], dtype=np.float32
@@ -877,7 +879,7 @@ class Calibration(object):
             )
             # Fill in `_id`` and `confidence` fields
             grid_pts_array_r["id"] = np.zeros_like(
-                grid_pts_array_r["timestamp"], dtype=np.int64
+                grid_pts_array_r["timestamp"], dtype=int64
             )
             grid_pts_array_r["confidence"] = np.ones_like(
                 grid_pts_array_r["timestamp"], dtype=np.float32
@@ -992,7 +994,7 @@ class Calibration(object):
         aspect_ratio = width / height
         pts = get_point_grid(
             n_horizontal_lines=n_horizontal_lines,
-            n_vertical_lines=np.int(n_horizontal_lines * aspect_ratio)
+            n_vertical_lines=int(n_horizontal_lines * aspect_ratio)
             if n_vertical_lines is None
             else n_vertical_lines,
             st_horizontal=hmin,

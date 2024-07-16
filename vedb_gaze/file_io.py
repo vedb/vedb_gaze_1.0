@@ -1,13 +1,11 @@
 # Loading / saving of files (as distinct from classes, which is higher-level)
 
-# Imports (vm_tools)
 import os
 import six
 import time
 import glob
 import h5py
 import json
-import uuid
 import shutil
 import imageio
 import tempfile
@@ -15,13 +13,10 @@ import warnings
 import inspect
 import functools
 import subprocess
-import collections
 import numpy as np
 from PIL import Image
 from scipy.io import loadmat
 from matplotlib.pyplot import imread as _imread
-
-# from . import options
 
 # Soft imports for obscure or heavy modules
 try:
@@ -50,8 +45,6 @@ try:
     # Longer time-outs for read
     botoconfig = Config(connect_timeout=50, read_timeout=10 * 60)  # 10 mins
 except:
-    # TODO: put option to fail silently into config file
-    print("Failed to import cottoncandy - no cloud interfaces available!")
     botoconfig = None
     default_bucket = None  # This will fail... but so it goes.
     botoconfig = None
@@ -162,9 +155,9 @@ def crop_frame(frame, center, size=(512, 512), pad_value=None):
     vdim, hdim = size
     frame_vdim, frame_hdim = frame.shape[:2]
     center = np.array(center) * np.array([frame_hdim, frame_vdim])
-    center = np.round(center).astype(np.int)
-    vst, vfin = center[1] - np.int(vdim / 2), center[1] + np.int(vdim / 2)
-    hst, hfin = center[0] - np.int(hdim / 2), center[0] + np.int(hdim / 2)
+    center = np.round(center).astype(int)
+    vst, vfin = center[1] - int(vdim / 2), center[1] + int(vdim / 2)
+    hst, hfin = center[0] - int(hdim / 2), center[0] + int(hdim / 2)
     # overflow
     vunder = -np.minimum(vst, 0)
     vover = np.maximum(vfin - frame_vdim, 0)
@@ -328,7 +321,7 @@ def load_mp4(
         imdims = size
     else:
         orig_imdims = np.array(var_size(file_name)[1:3])
-        imdims = np.ceil(size * orig_imdims).astype(np.int)
+        imdims = np.ceil(size * orig_imdims).astype(int)
     if color == "gray":
         output_dims = imdims
     else:
@@ -589,7 +582,7 @@ def var_size(fpath, variable_name=None, cloudi=None):
                 # precise, slow:
                 nf = vid.count_frames()
                 # imprecise (?), fast:
-                # nf = np.round(meta['duration'] * meta['fps']).astype(np.int)
+                # nf = np.round(meta['duration'] * meta['fps']).astype(int)
                 return [nf, y, x, 3]
 
         elif ext in ".npy":
@@ -1216,7 +1209,7 @@ if torch_available:
             if transform is None:
                 transform = default_xfm
             if classes is None:
-                classes = np.zeros((len(images),), dtype=np.int)
+                classes = np.zeros((len(images),), dtype=int)
             self.imgs = list(zip(images, classes))
             self.transform = transform
             self.target_transform = target_transform
@@ -1262,7 +1255,7 @@ if torch_available:
             if transform is None:
                 transform = default_xfm
             if classes is None:
-                classes = np.zeros((len(self.imgs),), dtype=np.int)
+                classes = np.zeros((len(self.imgs),), dtype=int)
             self.classes = classes
             self.transform = transform
             self.target_transform = target_transform
@@ -1305,7 +1298,7 @@ if torch_available:
                 Set of operations to perform on data as it is loaded
                 see module transforms.py
             """
-            self.imgs = zip(images, np.zeros((len(images),), dtype=np.int))
+            self.imgs = zip(images, np.zeros((len(images),), dtype=int))
             self.transform = transform
             self.target_transform = target_transform
             self.loader = loader

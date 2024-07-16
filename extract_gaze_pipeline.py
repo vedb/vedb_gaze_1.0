@@ -13,9 +13,9 @@ This script will generate the .npz outputs for:
     - gaze
     - error
 This was originally in "pipelines.py" in vedb_gaze and pipelines.py in 
-vedb_extract_gaze.
+vedb_gaze_1.0.
 Notable changes:
-    - This will not use a database entry
+    - This will not make reference to a database
     - Trying to miminize # of referenced non-public repos
     - Not being set up for Jupyter development
     - Use a YAML/config set up for submitting requests
@@ -38,7 +38,10 @@ import utils
 
 # Parse the arguments
 parser = argparse.ArgumentParser()
-parser.add_argument("-f", "--folder", help = "input the folder location where all your files are located.")
+parser.add_argument(
+    "-f",
+    "--folder",
+    help = "input the folder location where all your files for one session are located.")
 parser.add_argument(
     "-w",
     "--wholeSession",
@@ -47,16 +50,17 @@ parser.add_argument(
 )
 args = parser.parse_args()
 
+# Read in session files
+session_folder = args.folder
+
 # Establish default input and output directories
-base_dir = '/media/space/Database/staging' # '/Volumes/space/Database/staging
-output_dir = os.path.join(base_dir, args.folder, 'processedGaze')
+output_dir = os.path.join(session_folder, 'processedGaze')
 # make output folder if it doesn't yet exist
 os.makedirs(output_dir, exist_ok=True)
 
-# Read in session files
-session_folder = args.folder
+
 try:
-    world_vid_file = os.path.join(session_folder, 'world.mp4')
+    world_vid_file = os.path.join(session_folder, 'worldPrivate.mp4')
     world_time_file = os.path.join(session_folder, 'world_timestamps.npy')
     eye_left_file = os.path.join(session_folder, 'eye1.mp4')
     eye_left_time_file = os.path.join(session_folder, 'eye1_timestamps.npy')
@@ -73,8 +77,8 @@ eye_left_time = np.load(eye_left_time_file)
 eye_right_time = np.load(eye_right_time_file)
 
 # Get the marker times from previous postprocess.py output
-if os.path.exists(os.path.join(args.folder, 'marker_times.yaml')):
-    with open(os.path.join(args.folder, 'marker_times.yaml'), 'r') as file:
+if os.path.exists(os.path.join(session_folder, 'marker_times.yaml')):
+    with open(os.path.join(session_folder, 'marker_times.yaml'), 'r') as file:
         marker_times = yaml.safe_load(file)
 else:
     # Raise error
@@ -183,8 +187,10 @@ else:
 ################
 # Step 3: perform calibration
 ################
+calibration_path_left = os.path.join(output_dir, 'calibration_left.npz')
+calibration_path_right = os.path.join(output_dir, 'calibration_left.npz')
 
-if not os.path.exists(os.path.join(output_dir, 'calibration.npy')):
+if not (os.path.exists(calibration_path_left) and os.path.exists(calibration_path_right)):
 
     print("\n=== Starting calibration ===\n")
     
@@ -206,11 +212,14 @@ if not os.path.exists(os.path.join(output_dir, 'calibration.npy')):
                                                           max_stds_for_outliers=3.0,)
     
     # Save the calibration files
-    np.save(os.path.join(output_dir, 'calibration.npy'), **calibration)
+    calibration['left'].save(os.path.join(output_dir, 'calibration_left.npz'))
+    calibration['right'].save(os.path.join(output_dir, 'calibration_right.npz'))
 
 else:
-    calibration = np.load(os.path.join(output_dir, 'calibration.npy'), allow_pickle=True).item()
-    
+    #calibration = np.load(os.path.join(output_dir, 'calibration.npy'), allow_pickle=True).item()
+    calibration = {}
+    calibration['left'] = vedb_gaze.calibration.Calibration.load(calibration_path_left)
+    calibration['right'] = vedb_gaze.calibration.Calibration.load(calibration_path_right)
 
 
 ################
@@ -238,7 +247,7 @@ if not os.path.exists(os.path.join(output_dir, 'gaze_calibration.npy')):
         np.save(os.path.join(output_dir, 'gaze.npy'), gaze)
         
 else:
-    gaze_calibration = np.load(os.path.join(output_dir, 'gaze_calibration.npz'), allow_pickle=True).item()
+    gaze_calibration = np.load(os.path.join(output_dir, 'gaze_calibration.npy'), allow_pickle=True).item()
     if args.wholeSession:
         gaze = np.load(os.path.join(output_dir, 'gaze.npy'), allow_pickle=True).item()
 

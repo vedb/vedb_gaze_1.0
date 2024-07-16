@@ -137,7 +137,7 @@ def onoff_from_binary(data, return_duration=True):
         start_value = 1
     else:
         start_value = 0
-    data = data.astype(np.float).copy()
+    data = data.astype(float).copy()
 
     ddata = np.hstack([[start_value], np.diff(data)])
     (onsets,) = np.nonzero(ddata > 0)
@@ -166,7 +166,7 @@ def onoff_from_binary(data, return_duration=True):
             duration[0] = offsets[0] - 0
         onoff = np.vstack([onoff, duration])
 
-    onoff = onoff.T.astype(np.int)
+    onoff = onoff.T.astype(int)
     return onoff
 
 

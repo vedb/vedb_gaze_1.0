@@ -21,11 +21,13 @@ import argparse
 from datetime import datetime
 import os
 import yaml
-from scipy import signal
 import numpy as np
-import plotly.graph_objects as go
-import pandas as pd
 import pupil_recording_interface
+
+# The following are only necessary for odometry post-processing
+#from scipy import signal
+#import plotly.graph_objects as go
+#import pandas as pd
 
 
 ##########################
