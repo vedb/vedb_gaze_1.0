@@ -1,4 +1,4 @@
-name: vedb_analysis
+name: vedb_analysis_1.0
 channels:
   - anaconda
   - conda-forge
@@ -9,11 +9,10 @@ dependencies:
   - pip
   - black
   - pipreqs
-  - numpy=1.19
+  - numpy
   - matplotlib
   - pandas
   - h5py
-  # - h5py==3.6
   - imageio
   - scipy
   - pyyaml
@@ -26,6 +25,5 @@ dependencies:
   - cython
   - tqdm
   - pip:
-    - pydra
     - pupil-detectors
-    - cottoncandy
+    - git+https://github.com/cheind/py-thin-plate-spline.git
