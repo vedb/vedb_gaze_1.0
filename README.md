@@ -1,5 +1,5 @@
 # vedb_gaze_1.0
-Processing of gaze for visual experience dataset. This code is a light-dependency version of the code in [vedb-gaze](http://github.com). 
+Processing of gaze for visual experience dataset. This code is a light-dependency version of the code in [vedb-gaze](http://github.com/vedb/vedb-gaze). 
 
 This code performs the following operations: 
 
